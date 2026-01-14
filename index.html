@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QuickVTX Config Wizard</title>
+  <style>
+    :root {
+      --bg: #f5efe6;
+      --ink: #1e1b16;
+      --accent: #2d5d7b;
+      --accent-2: #c86b2f;
+      --panel: #fff7ee;
+      --muted: #6b6258;
+      --border: #d6c7b7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Mono", "Menlo", "Consolas", "Courier New", monospace;
+      background: radial-gradient(1200px 800px at 10% -10%, #ffe7c6 0%, var(--bg) 45%, #f0e5d6 100%);
+      color: var(--ink);
+    }
+    header {
+      padding: 24px 24px 8px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 24px;
+      letter-spacing: 0.5px;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    main {
+      padding: 16px 24px 32px;
+      display: grid;
+      gap: 16px;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 8px 20px rgba(34, 24, 14, 0.08);
+    }
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+    .grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    label {
+      font-size: 12px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+    }
+    input, select, button, textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fffdf9;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--ink);
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: 2px solid rgba(45, 93, 123, 0.3);
+      border-color: var(--accent);
+    }
+    button {
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 10px 14px;
+      font-weight: 600;
+    }
+    button.secondary {
+      background: var(--accent-2);
+    }
+    .pos-row {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: 70px 1fr 1fr;
+      align-items: end;
+    }
+    .pos-row .label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .footer {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .preview {
+      white-space: pre;
+      background: #fffdf8;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 13px;
+      min-height: 140px;
+    }
+    @media (max-width: 720px) {
+      .grid.cols-2, .grid.cols-3, .pos-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>QuickVTX Config Wizard</h1>
+    <div class="sub">Single-page generator for vtxConfig_&lt;DEVICEID&gt;.cfg</div>
+  </header>
+  <main>
+    <section class="panel grid cols-3">
+      <div>
+        <label for="deviceId">Device ID (hash)</label>
+        <input id="deviceId" placeholder="17EE1802">
+      </div>
+      <div>
+        <label for="commandId">Command ID (hex)</label>
+        <input id="commandId" placeholder="0x10">
+      </div>
+      <div>
+        <label for="switchSel">Switch</label>
+        <select id="switchSel"></select>
+      </div>
+      <div>
+        <label for="bandId">Band ID (hex)</label>
+        <input id="bandId" placeholder="0x0C">
+      </div>
+      <div>
+        <label for="channelId">Channel ID (hex)</label>
+        <input id="channelId" placeholder="0x0D">
+      </div>
+      <div>
+        <label for="positionsCount">Positions</label>
+        <select id="positionsCount"></select>
+      </div>
+      <div class="grid" style="grid-column: span 3;">
+        <div>
+          <label for="skipBands">Skip bands (letters)</label>
+          <input id="skipBands" placeholder="AE">
+        </div>
+        <div class="muted">Tip: If Command ID is provided, Band/Channel auto-fill as Command-4 / Command-3.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div id="positionsArea" class="grid"></div>
+    </section>
+
+    <section class="panel grid">
+      <div class="preview" id="preview"></div>
+      <div class="footer">
+        <button id="downloadBtn">Download config</button>
+        <button id="copyBtn" class="secondary">Copy to clipboard</button>
+        <span class="muted" id="filenameHint"></span>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const switches = ["--", "SA", "SB", "SC", "SD", "SE", "SF", "S1", "S2"];
+    const bands = ["A", "B", "E", "F", "R", "L", "X", "Scan>", "Scan<", "None"];
+    const channels = [1,2,3,4,5,6,7,8];
+    const scanDurations = [2,3,4,5,6,7,8,9,10];
+
+    const deviceIdEl = document.getElementById("deviceId");
+    const commandIdEl = document.getElementById("commandId");
+    const bandIdEl = document.getElementById("bandId");
+    const channelIdEl = document.getElementById("channelId");
+    const switchSel = document.getElementById("switchSel");
+    const positionsCountEl = document.getElementById("positionsCount");
+    const skipBandsEl = document.getElementById("skipBands");
+    const positionsArea = document.getElementById("positionsArea");
+    const preview = document.getElementById("preview");
+    const filenameHint = document.getElementById("filenameHint");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const copyBtn = document.getElementById("copyBtn");
+
+    function toHex(val) {
+      if (val === "" || val == null) return "";
+      const clean = String(val).trim().replace(/^0x/i, "");
+      if (!clean) return "";
+      const num = parseInt(clean, 16);
+      if (Number.isNaN(num)) return "";
+      return "0x" + num.toString(16).toUpperCase().padStart(2, "0");
+    }
+
+    function normalizeDeviceId() {
+      const raw = deviceIdEl.value.trim().replace(/^0x/i, "");
+      return raw.toUpperCase();
+    }
+
+    function updateFromCommand() {
+      const hex = toHex(commandIdEl.value);
+      if (!hex) return;
+      const num = parseInt(hex.replace(/^0x/i, ""), 16);
+      if (Number.isNaN(num)) return;
+      bandIdEl.value = "0x" + (num - 4).toString(16).toUpperCase().padStart(2, "0");
+      channelIdEl.value = "0x" + (num - 3).toString(16).toUpperCase().padStart(2, "0");
+      commandIdEl.value = hex;
+    }
+
+    function buildPositions() {
+      positionsArea.innerHTML = "";
+      const count = parseInt(positionsCountEl.value, 10);
+      for (let i = 1; i <= count; i++) {
+        const row = document.createElement("div");
+        row.className = "pos-row";
+
+        const label = document.createElement("div");
+        label.className = "label";
+        label.textContent = "Pos " + i;
+
+        const bandSel = document.createElement("select");
+        bands.forEach(b => {
+          const opt = document.createElement("option");
+          opt.value = b;
+          opt.textContent = b;
+          bandSel.appendChild(opt);
+        });
+
+        const chanSel = document.createElement("select");
+        const syncChannel = () => {
+          chanSel.innerHTML = "";
+          const band = bandSel.value;
+          const list = band.startsWith("Scan") ? scanDurations : channels;
+          list.forEach(v => {
+            const opt = document.createElement("option");
+            opt.value = v;
+            opt.textContent = band.startsWith("Scan") ? (v + "s") : v;
+            chanSel.appendChild(opt);
+          });
+          chanSel.disabled = (band === "None");
+        };
+        bandSel.addEventListener("change", () => {
+          syncChannel();
+          updatePreview();
+        });
+        chanSel.addEventListener("change", updatePreview);
+        syncChannel();
+
+        row.appendChild(label);
+        row.appendChild(bandSel);
+        row.appendChild(chanSel);
+        positionsArea.appendChild(row);
+      }
+    }
+
+    function buildSwitches() {
+      switches.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s;
+        opt.textContent = s;
+        switchSel.appendChild(opt);
+      });
+    }
+
+    function buildPositionsCount() {
+      for (let i = 2; i <= 6; i++) {
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = i;
+        positionsCountEl.appendChild(opt);
+      }
+      positionsCountEl.value = "3";
+    }
+
+    function selectedPositions() {
+      const rows = positionsArea.querySelectorAll(".pos-row");
+      const out = [];
+      rows.forEach(row => {
+        const selects = row.querySelectorAll("select");
+        const band = selects[0].value;
+        const channel = selects[1].value;
+        out.push({ band, channel });
+      });
+      return out;
+    }
+
+    function updatePreview() {
+      const deviceId = normalizeDeviceId();
+      const cmdHex = toHex(commandIdEl.value);
+      const bandHex = toHex(bandIdEl.value);
+      const chanHex = toHex(channelIdEl.value);
+      const sw = switchSel.value;
+      const count = (sw === "--") ? 0 : parseInt(positionsCountEl.value, 10);
+      const positions = selectedPositions().slice(0, count);
+      const skip = (skipBandsEl.value || "").toUpperCase().replace(/[^A-Z]/g, "");
+
+      const lines = [];
+      if (bandHex) lines.push("Band: " + bandHex);
+      if (chanHex) lines.push("Channel: " + chanHex);
+      if (cmdHex) lines.push("Command: " + cmdHex);
+      lines.push("Switch: " + sw);
+      lines.push("Positions: " + count);
+      for (let i = 0; i < positions.length; i++) {
+        const p = positions[i];
+        let value = p.band;
+        if (p.band.startsWith("Scan")) {
+          value = p.band + String(p.channel);
+        } else if (p.band !== "None") {
+          value = p.band + String(p.channel);
+        }
+        lines.push("Pos" + (i + 1) + ": " + value);
+      }
+      if (skip) lines.push("Skip: " + skip);
+
+      preview.textContent = lines.join("\n");
+      filenameHint.textContent = deviceId ? ("File: vtxConfig_" + deviceId + ".cfg") : "File: vtxConfig_<DEVICEID>.cfg";
+    }
+
+    function downloadConfig() {
+      updatePreview();
+      const deviceId = normalizeDeviceId() || "DEVICEID";
+      const blob = new Blob([preview.textContent + "\n"], { type: "text/plain" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "vtxConfig_" + deviceId + ".cfg";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function copyToClipboard() {
+      updatePreview();
+      navigator.clipboard.writeText(preview.textContent);
+    }
+
+    deviceIdEl.addEventListener("input", updatePreview);
+    commandIdEl.addEventListener("input", () => {
+      updateFromCommand();
+      updatePreview();
+    });
+    bandIdEl.addEventListener("input", updatePreview);
+    channelIdEl.addEventListener("input", updatePreview);
+    switchSel.addEventListener("change", updatePreview);
+    positionsCountEl.addEventListener("change", () => {
+      buildPositions();
+      updatePreview();
+    });
+    skipBandsEl.addEventListener("input", updatePreview);
+    downloadBtn.addEventListener("click", downloadConfig);
+    copyBtn.addEventListener("click", copyToClipboard);
+
+    buildSwitches();
+    buildPositionsCount();
+    buildPositions();
+    updatePreview();
+  </script>
+</body>
+</html>
