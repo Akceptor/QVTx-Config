@@ -35,10 +35,10 @@
       --muted: #b09880;
       --ring: #3d3028;
       --shadow: rgba(0, 0, 0, 0.5);
-      --grad1: #0055FF;
-      --grad2: #0055FF;
-      --grad3: #FFD500;
-      --grad4: #FFD500;
+      --grad1: #003399;
+      --grad2: #003399;
+      --grad3: #CCAA00;
+      --grad4: #CCAA00;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -51,6 +51,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .content-wrapper {
+      width: 100%;
+      max-width: 680px;
+      background: transparent;
     }
     /* UI controls (theme + lang toggles) */
     .ui-controls {
@@ -493,7 +501,7 @@
       { brand: 'RadioMaster', name: 'Boxer',       variant: 'bw',   img: 'radio-boxer.png' },
       { brand: 'RadioMaster', name: 'TX12 MK2',   variant: 'bw',   img: 'radio-tx12mk2.png' },
       { brand: 'RadioMaster', name: 'Zorro',       variant: 'bw' },
-      { brand: 'RadioMaster', name: 'Pocket',      variant: 'bw' },
+      { brand: 'RadioMaster', name: 'Pocket',      variant: 'bw', img: 'radio-pocket.jpeg' },
       { brand: 'RadioMaster', name: 'MT12',        variant: 'bw' },
       { brand: 'RadioMaster', name: 'GX12',        variant: 'bw' },
       { brand: 'Jumper', name: 'T15',      variant: 'color' },
