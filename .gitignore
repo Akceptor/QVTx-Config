@@ -1,0 +1,4 @@
+# Override global gitignore for this web project
+!*.html
+!*.png
+!images/**
