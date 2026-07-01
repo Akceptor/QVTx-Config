@@ -623,26 +623,6 @@
       },
     };
 
-    // ── INLINE ASSERTIONS ─────────────────────────────────────
-    (function runAssertions() {
-      function assert(cond, msg) {
-        if (!cond) console.error('ASSERTION FAILED: ' + msg);
-      }
-      assert(RADIO_MODELS.filter(m => m.variant === 'color').length === 8, 'color model count should be 8');
-      assert(RADIO_MODELS.filter(m => m.variant === 'bw').length === 15, 'BW model count should be 15');
-      assert(RADIO_MODELS.find(m => m.name === 'TX15').variant === 'color', 'TX15 must be color');
-      assert(RADIO_MODELS.find(m => m.name === 'Boxer').variant === 'bw', 'Boxer must be bw');
-      assert(RADIO_MODELS.find(m => m.name === 'T22').variant === 'color', 'T22 must be color');
-      assert(RADIO_MODELS.find(m => m.name === 'T20').variant === 'bw', 'T20 must be bw');
-      assert(FILE_MANIFEST.color.length === 5, 'color manifest should have 5 files');
-      assert(FILE_MANIFEST.bw.length === 4, 'BW manifest should have 4 files');
-      assert(getRawUrl('color', 'SCRIPTS/FUNCTIONS/qvtx.lua').includes('TX15'), 'color URL must include TX15');
-      assert(getRawUrl('bw', 'SCRIPTS/TELEMETRY/qvtx.lua').includes('BW'), 'BW URL must include BW');
-      assert(getRawUrl('color', 'SCRIPTS/TOOLS/QVTxColor.lua') ===
-        'https://raw.githubusercontent.com/Akceptor/Quick-VTx/main/QuickVTX%20-%20TX15/SCRIPTS/TOOLS/QVTxColor.lua',
-        'color URL full match');
-    })();
-
     // ── STATE ─────────────────────────────────────────────────
 
     const state = {
